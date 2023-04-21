@@ -1,0 +1,248 @@
+var a={RollNumber:580,Name:'JanakiDevi'}
+
+Students.js file:
+
+const express = require("express");
+const Result = require("../database");
+// const Mapping = require("./Operations");
+const Router = express.Router();
+
+Router.post("/Insert", (req, res) => {
+  let Details = req.body;
+  console.log(Details);
+  Result("log", "Insert", Details)
+    .then((result) => {
+      res.send(result.Message);
+      console.log(result);
+    })
+    .catch((err) => {
+      res.send(err.message);
+    });
+});
+Router.delete("/Delete:ID", (req, res) => {
+  let Details = req.params.ID;
+  Result("students", "Delete", Details)
+    .then((result) => {
+      res.send(result.Message);
+      console.log(result);
+    })
+    .catch((err) => {
+      res.send(err.message);
+    });
+});
+Router.put("/Update:ID", (req, res) => {
+  let Details = req.params.ID;
+  let UpdatedDetails = req.body;
+  console.log(UpdatedDetails);
+  console.log(Details);
+  Result("Students", "Update", Details, UpdatedDetails)
+    .then((result) => {
+      res.send(result.Message);
+      console.log(result);
+    })
+    .catch((err) => {
+      res.send(err.message);
+    });
+});
+Router.get("/Read:_ID", (req, res) => {
+  const Details = req.params._ID;
+  Result("Students", "Read", Details)
+    .then((result) => {
+      res.send({ Message: result.Message, Result: result.rows });
+      console.log(result);
+    })
+    .catch((err) => {
+      res.send(err.message);
+    });
+});
+
+module.exports = Router;
+
+Database.js file:
+
+const oracledb = require('oracledb');
+// Set database connection details
+const dbConfig = {
+    user: "system",
+    password: "manager",
+    connectString: "localhost:/XEXDB",
+  };
+  const Query = async (sql) => {
+    let connection;
+    try {
+      connection = await oracledb.getConnection(dbConfig);
+      const result = await connection.execute(sql);
+      await connection.commit();
+      return result;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (connection) {
+        try {
+          await connection.close();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+  };
+  
+  const Result = async (...Parameters) => {
+    
+    let Sql, Message;
+    console.log(typeof (Parameters[2]));
+    Details = Parameters[2];
+    if(typeof Parameters[2] === 'string') {
+      Details = eval(`(${Parameters[2]})`); 
+    }
+   switch (Parameters[1]) {
+      case "Insert":
+        Sql = `insert into ${Parameters[0]} values('${Details.RollNumber}','${Details.Name}')`;
+        Message = "Inserted Successfully";
+        break;
+      case "Update":
+        Sql = `update ${Parameters[0]} set RollNumber = '${Parameters[3].RollNumber}', Name = '${Parameters[3].Name}' where RollNumber = '${Details.RollNumber}'`;
+        Message = `Succes Updating from ${Details.RollNumber, Details.Name} to ${Parameters[3].RollNumber, Parameters[3].Name}`;
+        break;
+      case "Delete":
+        Sql = `delete from ${Parameters[0]} where RollNumber = '${Details.RollNumber}'`;
+        Message = `Success deleting ${Details.RollNumber}`;
+        break;
+      case "Read":
+          Sql = `select * from ${Parameters[0]}`;
+          Message = `Showing all the values in the database ${Parameters[0]}`;
+          if(Details.RollNumber){
+            Sql = `select * from ${Parameters[0]} where RollNumber = '${Details.RollNumber}'`;
+            Message = `${Details.RollNumber} Retrived`
+          }
+        break;
+      default:
+        console.error("Invalid Parameters");
+        break;
+    }
+    console.log(Sql);
+    var result = await Query(Sql);
+    result.Message = Message;
+    return result;
+  };
+  module.exports = Result;
+
+requires.js file:
+
+const express = require('express');
+const bodyparser = require('body-parser');
+const cors = require('cors');
+const Students = require('./Routes/Students');
+const Teachers = require('./Routes/Teachers')
+const app = express();
+app.use(cors());
+app.use(bodyparser.urlencoded({ extended :  true}));
+app.use(bodyparser.json());
+app.get('/',(req,res)=>{
+    res.send("successs");
+})
+app.use('/Students', Students);
+app.use('/Teachers', Teachers);
+module.exports = app;
+
+index.js file:
+
+const app=require('./requires');
+const port=process.env.PORT || 3600;
+app.listen(port,()=>{
+    console.log(`listening on port http://localhost:${port}`);
+});
+
+
+
+
+TABLE HRA:
+
+create table hra_table(catg char(1) not null,wef_date varchar2(10),hra_per float,primary key(catg,wef_date));
+
+emp_table:
+
+create table emp_table(emp_code varchar(10) not null,
+emp_name varchar(30) not null,
+emp_qual char(10),
+emp_join_date date not null,
+emp_resign_date date,
+emp_pan_no char(20) not null,
+emp_aadhar_no number(12) not null,
+emp_pf_flag char(1),
+emp_pf_no varchar(22) not null,
+emp_esi_no number,
+emp_est_flag char(1),
+emp_gst_no varchar(20) not null,
+emp_basic float,
+emp_dept varchar(20) not null,
+emp_hno varchar(20),
+emp_street varchar(20),
+emp_city varchar(20),
+emp_pincode number(6),
+emp_state varchar(20),
+emp_ph_no number(10),
+emp_email_id varchar(30),
+emp_cons_res_flag char(1),
+emp_spl_pay int not null,
+emp_bank_ifsc varchar(20) not null,
+emp_bank_name varchar(20) not null,
+emp_bank_account_no varchar(20) not null);
+
+
+{"emp_code":"1234567890","emp_name":"Janaki Devi","emp_qual":"Btech","emp_join_date":"7-april-2023","emp_resign_date":"","emp_pan_no":"9744674736366466","emp_aadhar_no":234567899123,"emp_pf_flag":"y","emp_pf_no ":"5678888","emp_esi_no":5678889,"emp_est_flag":"y","emp_gst_no":"56788888","emp_basic":456.78,"emp_dept":"cse","emp_hno":"21471A0580","emp_street":"sisumandir","emp_city":"narasaraopet","emp_pincode":522601,"emp_state":"ap","emp_ph_no":9494021841,"emp_email_id":"abc@gmail.com","emp_cons_res_flag":"y","emp_spl_pay":234455566,"emp_bank_ifsc":"bxjsgxsj","emp_bank_name":"sbi","emp_bank_account_no":"12334556"}
+
+
+cursor code:
+
+create table cont_table1(emp_code varchar2(10),emp_name varchar2(30),
+        emp_qual char(10),
+        emp_pf_flag char(1),
+        emp_basic FLOAT,
+        emp_dept varchar2(20),
+        emp_spl_pay int,
+        emp_con_reg_flag char(1)
+       );
+declare
+e_code emp_table.emp_code%type;
+e_name emp_table.emp_name%type;
+e_qual emp_table.emp_qual%type;
+e_pf_flag emp_table.emp_pf_flag%type;
+e_basic emp_table.emp_basic%type;
+e_dept emp_table.emp_dept%type;
+e_spl_pay emp_table.emp_spl_pay%type;
+e_con_reg_flag emp_table.emp_cons_res_flag%type;
+cursor c_cursor is select emp_code,emp_name,emp_qual,emp_pf_flag,emp_basic,emp_dept,emp_spl_pay,emp_cons_res_flag from emp_table where emp_resign_date is null;
+begin
+open c_cursor;
+loop
+fetch c_cursor into e_code,e_name,e_qual,e_pf_flag,e_basic,e_dept,e_spl_pay,e_con_reg_flag;
+exit when c_cursor%notfound;
+dbms_output.put_line(e_code ||':'|| e_name ||':' || e_qual|| ':'|| e_pf_flag||':'|| e_basic ||':'|| e_dept ||':'|| e_spl_pay ||':'|| e_con_reg_flag);
+insert into cont_table1(emp_code,emp_name,emp_qual,emp_pf_flag,emp_basic,emp_dept,emp_spl_pay,emp_con_reg_flag) values(e_code,e_name,e_qual,e_pf_flag,e_basic,e_dept,e_spl_pay,e_con_reg_flag);
+end loop;
+close c_cursor;
+end;
+/
+
+
+select * from emp_table;
+
+
+
+DECLARE  
+   e_code emp_table.emp_code%type;
+   e_name emp_table.emp_name%type;
+   e_qual emp_table.emp_qual%type;
+   CURSOR c_cus is  
+      SELECT emp_code,emp_name,emp_qual FROM emp_table;  
+BEGIN  
+   OPEN c_cus;  
+   LOOP  
+      FETCH c_cus into e_code,e_name,e_qual;  
+      EXIT WHEN c_cus%notfound;  
+      dbms_output.put_line(e_code || ' ' || e_name || ' ' || e_qual);  
+   END LOOP;  
+   CLOSE c_customers;  
+END;  
+/  
